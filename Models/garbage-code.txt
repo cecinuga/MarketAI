@@ -1,0 +1,51 @@
+"""if not self.build:
+            n_samples, n_features = self.X.shape
+            n_output = self.y.shape[0]
+            normal_initiliazer = tf.random_normal_initializer(seed=0, mean=0.0, stddev=1.0)
+            XN = tf.keras.utils.normalize(self.X)
+            self.X = tf.constant(XN, name="X", dtype=tf.double)
+            self.y = tf.reshape(self.y, [-1, 1])
+            self.f_weights = tf.Variable(normal_initiliazer([self.n_neurons, n_samples, n_features], dtype=tf.double), name="f_weights", dtype=tf.double, trainable=True )
+            self.h_weights = tf.Variable(normal_initiliazer([self.n_layers, self.n_neurons, n_samples, n_output], dtype=tf.double), name="h_weights", dtype=tf.double, trainable=True )
+            self.bias = tf.Variable([0.01 for l in range(self.n_layers)], name="bias", dtype=tf.double, trainable=True )
+            #self.loss = lambda : tf.losses.mean_squared_error(self.predicted, y)
+
+            
+            self.h_weights[0].assign([tf.math.sigmoid(tf.matmul(self.X, tf.transpose(self.f_weights[n])) + self.bias[0]) for n in range(self.n_neurons)])
+            for l in range(1,self.n_layers-1):
+                self.h_weights[l].assign([tf.math.sigmoid(tf.matmul(self.h_weights[l-1][n], self.h_weights[l][n]) + self.bias[l]) for n in range(self.n_neurons)])
+            self.h_weights[self.n_layers-1].assign([tf.math.sigmoid(tf.matmul(self.h_weights[self.n_layers-2][n], self.h_weights[self.n_layers-1][n]) + self.bias[self.n_layers-1]) for n in range(self.n_neurons)])
+            self.build = True
+
+
+            self.h_weights[0].assign([tf.math.sigmoid(tf.matmul(self.X, tf.transpose(self.f_weights[n])) + self.bias[0]) for n in range(self.n_neurons)])
+            for l in range(1,self.n_layers-1):
+                self.h_weights[l].assign([tf.math.sigmoid(tf.matmul(self.h_weights[l-1][n], self.h_weights[l][n]) + self.bias[l]) for n in range(self.n_neurons)])
+            self.h_weights[self.n_layers-1].assign([tf.math.sigmoid(tf.matmul(self.h_weights[self.n_layers-2][n], self.h_weights[self.n_layers-1][n]) + self.bias[self.n_layers-1]) for n in range(self.n_neurons)])
+        
+
+
+    @tf.function    
+    def init(self):
+        if not self.build:
+            self.learning_rate = tf.keras.optimizers.schedules.ExponentialDecay(self.lr, 5, 0.85, name="Learning_Rate")
+            self.optimizer = tf.keras.optimizers.Adam(self.learning_rate)
+
+            self.vars = [self.f_weights, self.h_weights]
+            self.build = True
+        
+            return tf.reduce_mean(tf.math.sigmoid(tf.tensordot(tf.reduce_mean(tf.reduce_mean(self.h_weights[self.n_layers-1], axis=0), axis=0), tf.reduce_mean(tf.reduce_mean(self.h_weights[self.n_layers-1], axis=0), axis=1), axes=0) + tf.reshape(self.bias[self.n_layers-1], [-1, 1])), axis=0)        
+    
+    @tf.function
+    
+    def train(self, epochs=75):  
+        for e in range(epochs):
+            with tf.GradientTape(persistent=False, watch_accessed_variables=True) as tape:
+                predicted = self.init()
+                loss = self.loss(predicted)
+
+            grads = tape.gradient(loss, self.vars)
+            self.optimizer.apply_gradients(zip(grads, self.vars))
+
+        self.error =
+        #self.error = tf.keras.metrics.MeanSquaredError().update_state(tf.reshape(tf.sigmoid(self.y), [1, -1]), predicted)"""
