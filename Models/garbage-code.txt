@@ -48,4 +48,96 @@
             self.optimizer.apply_gradients(zip(grads, self.vars))
 
         self.error =
-        #self.error = tf.keras.metrics.MeanSquaredError().update_state(tf.reshape(tf.sigmoid(self.y), [1, -1]), predicted)"""
+        #self.error = tf.keras.metrics.MeanSquaredError().update_state(tf.reshape(tf.sigmoid(self.y), [1, -1]), predicted)
+
+
+        class Layer(tf.Module):
+    def __init__(self, s_weights, n_neurons=3, activation=tf.identity):
+        self.n_neurons = n_neurons
+        self.s_weights = s_weights
+        self.activation = activation
+        self.build = False
+        self.normalized = False
+    
+    @tf.function(reduce_retracing=True)
+    def xavier_init(self, shape):
+        in_dim, out_dim = shape
+        xavier_lim = tf.sqrt(6.)/tf.sqrt(tf.cast(in_dim + out_dim, tf.float32))
+        weight_vals = tf.cast(tf.random.uniform(shape=(in_dim, out_dim), 
+                                        minval=-xavier_lim, maxval=xavier_lim, seed=22, dtype=tf.float32), dtype=tf.double)
+        return weight_vals
+
+    def __call__(self, X, y):
+        n_samples, n_features = X.shape
+        n_output = y.shape[0]
+        self.weights = tf.Variable(self.xavier_init(shape=(n_features, self.s_weights)), name="Weights", dtype=tf.double, trainable=True )
+        self.bias = tf.Variable(tf.zeros(shape=self.s_weights, dtype=tf.double), name="Bias", dtype=tf.double, trainable=True )
+        z = tf.add(tf.matmul(X, self.weights), self.bias)
+        print(X.shape,"*",self.weights.shape,"+",self.bias.shape)
+        return self.activation(z)
+
+    
+
+class MLPLinearRegressor(tf.Module):
+    def __init__(self, X, y, layers, lr=0.001):
+        self.X = X
+        self.y = y
+        self.layers = layers
+        self.optimizer = tf.keras.optimizers.Adam(lr)
+        self.accuracy = tf.keras.metrics.Accuracy()
+
+    @tf.function(reduce_retracing=True)
+    def accuracy_rrsse(self, predicted):
+        return tf.divide(tf.sqrt(
+            tf.divide(
+                tf.reduce_sum(tf.square(tf.abs((tf.subtract(predicted, tf.sigmoid(self.y)))))),
+                tf.reduce_sum(tf.square(tf.abs((tf.subtract(tf.reduce_mean(tf.sigmoid(self.y)), predicted)))))
+            )), len(predicted)
+        )
+
+    def normalize_dataset(self, X):
+        return tf.convert_to_tensor(tf.keras.utils.normalize(X))
+
+
+    @tf.function(reduce_retracing=True)
+    def loss(self, predicted):
+        #return 1/2 * tf.reduce_sum( tf.square(tf.subtract(tf.sigmoid(self.y), tf.squeeze(predicted))))
+        return tf.losses.mean_squared_error(self.y, predicted)
+
+    def calc_metrics(self, y_pred):
+        self.acc_rrsse = self.accuracy_rrsse(y_pred)
+
+    def train_step(self, X, y):
+        for layer in self.layers:
+            X = layer(X, y)
+            print(X)
+        return X
+           
+    def train(self, epochs=1, lr=0.001):
+        for e in range(epochs):
+            with tf.GradientTape(watch_accessed_variables=True, persistent=True) as tape:
+                self.y_pred = tf.squeeze(model.train_step(self.normalize_dataset(self.X), self.y))
+                loss = self.loss(self.y_pred)
+            
+            self.calc_metrics(self.y_pred)
+            self.accuracy.update_state(self.y, self.y_pred)
+
+            self.vars = [self.layers[0].weights, self.layers[1].weights, self.layers[2].weights, self.layers[0].bias, self.layers[1].bias, self.layers[2].bias]
+
+            grads = tape.gradient(loss, self.vars) 
+            self.optimizer.apply_gradients(zip(grads, self.vars))
+
+
+X_train, X_test, y_train, y_test = train_test_split(housing.data, housing.target, test_size=0.95, random_state=2)
+
+model = MLPLinearRegressor(X_train, y_train, [
+    Layer(50,activation=tf.nn.relu),
+    Layer(50,activation=tf.nn.relu),
+    Layer(1,activation=tf.sigmoid)
+])
+model.train(epochs=1, lr=0.1)
+print('predicted:', model.y_pred.numpy())
+print('y:', tf.sigmoid(y_train).numpy())
+print("Accuracy: ", model.acc_rrsse.numpy())
+print("Keras Accuracy: ", model.accuracy.result().numpy())
+"""
