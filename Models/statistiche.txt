@@ -1,5 +1,0 @@
-train: 391, test: 411, k: 1, epochs: 800, samples: 3000, dim=2, lr: 0.01, batch:  200, n
-train: 410, test: 381, k: 2, epochs: 800, samples: 3000, dim=2, lr: 0.01, batch:  200, n
-train: 410, test: 347, k: 5, epochs: 800, samples: 3000, dim=2, lr: 0.01, batch:  200, n
-
-train: 4882.105, test: 4502.105, k: 5, epochs: 8000, samples: 10000, dim=2, lr: 0.01, batch:  500, ridge

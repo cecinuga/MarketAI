@@ -4,7 +4,7 @@ Taking advantage of the orderflows we will predict the market price
 
 ## Neural Network
 The structure of the network is the following, 5 layers with `X_train.shape[0]` neurons.
-`Relu X Relu X Relu X Sigmoid X Identity`
+`Sigmoid X Sigmoid X Sigmoid X Sigmoid X Identity`
 
 
 ### Loss Function
@@ -26,9 +26,10 @@ The evalutation is computed using the following metrics:
 ### List of Optimizations Features
 1) `MiniBatch`
 2) `Normalization`
-3) `Lasso`
+3) `Elastic Net(L3 Regularization)` = `Lasso(L1 Regularization)` + `Ridge(L2 Regularitazion)`
 4) `Cross-Validation`
-5) `Any simple optimization...`
+5) `Dropout`
+6)) `Any simple optimization...`
 
 
 ### Stats
