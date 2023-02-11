@@ -1,0 +1,1 @@
+samples, features, loss, epochs, lr, batch_size, cross_k, mse_train, mse_test, mae_train, mae_test, residual_train, residual_test, bias
