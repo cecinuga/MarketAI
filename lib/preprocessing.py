@@ -1,8 +1,14 @@
+import numpy as np
 import tensorflow as tf
+from scipy import stats
 from sklearn.model_selection import KFold
 
 def normalize_dataset(X):
     return tf.keras.utils.normalize(X)
+
+def remove_outliers(X, threshold=3):
+    z = np.abs(stats.zscore(X))
+    return np.where(z > threshold, )[1]
 
 def make_dataset(X_data,y_data,k):
     def gen():
