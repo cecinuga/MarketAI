@@ -25,6 +25,6 @@ class Layer(tf.Module):
         z = tf.add(tf.matmul(X, self.weights), self.bias)
 
         #print(X.shape,"*",self.weights.shape,"+",self.bias.shape, "=", z.shape)
-        return self.activation(z)
+        return tf.nn.dropout(self.activation(z), 0.5)
 
     
