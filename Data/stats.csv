@@ -1,4 +1,5 @@
-samples, features, loss, epochs, lr, batch_size, cross_k, mse_train, mse_test, mae_train, mae_test, residual_train, residual_test
+samples, features, loss, epochs, lr, batch_size, cross_k, r2, mse_train, mse_test, mae_train, mae_test, residual_train, residual_test
 
-0,1,"[800, 2, 6854.62184446839, 1000, 0.01, 150, 1, 6738.666, 5600.884, 66.42626, 58.996616, -10.267848182079334, -5.722777753407995]"
-0,1,2,3,"[800, 2, 6481.65702780715, 2000, 0.01, 150, 1, 6370.2295, 5195.775, 64.35096, 56.670937, -17.969045025570775, -13.19168040114998]"
+
+1600,2,2536.0369524872794,4000,0.01,200,1,0.6127646382433557,2461.9946,2364.5671,39.869812,40.006718,-0.40467024937872226,1.4138454883059592
+
