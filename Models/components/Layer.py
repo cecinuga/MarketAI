@@ -19,7 +19,7 @@ class Layer(tf.Module):
         if not self.build:
             n_samples, n_features = X.shape
             self.weights = tf.Variable(self.xavier_init(shape=(n_features, n_samples)), name="Weights", dtype=tf.double, trainable=True, )
-            self.bias = tf.Variable(tf.zeros(shape=1, dtype=tf.double), name="Bias", dtype=tf.double, trainable=True )
+            self.bias = tf.Variable(tf.ones(shape=1, dtype=tf.double), name="Bias", dtype=tf.double, trainable=True )
             self.build = True
 
         z = tf.add(tf.matmul(X, self.weights), self.bias)
