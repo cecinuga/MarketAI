@@ -12,7 +12,8 @@ The Loss function is computed using `MeanSquarredError` + `Lasso`
 
 
 ### Gradient Descend
-The gradient is computed using `Adam`
+The gradient is computed using `Adam
+
 
 
 ### Evaluation
@@ -29,7 +30,8 @@ The evalutation is computed using the following metrics:
 3) `Elastic Net(L3 Regularization)` = `Lasso(L1 Regularization)` + `Ridge(L2 Regularitazion)`
 4) `Cross-Validation`
 5) `Dropout`
-6)) `Any simple optimization...`
+6) `Outliers Sanification`
+7) `Any simple optimization...`
 
 
 ### Stats
