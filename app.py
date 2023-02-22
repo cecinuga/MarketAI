@@ -24,7 +24,7 @@ def main():
     connection = dx.Endpoint(DXFEED_URL)
     print(f"{INDEX_STANDARD} connection: {DXFEED_URL} is {connection.connection_status}")
 
-    sub = connection.create_subscription(event_type='Quote')
+    sub = connection.create_subscription(event_type='Candle')
     trade_sub = sub.add_symbols(['C', 'IBM'])
     quote_handler = trade_sub.get_event_handler()
     print(quote_handler.get_dataframe().head(3))
