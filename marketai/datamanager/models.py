@@ -1,3 +1,7 @@
 from django.db import models
 
-# Create your models here.
+class DataManager(models.Model):
+    pass
+
+class DatasetRecord(models.Model):
+    pass
