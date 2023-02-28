@@ -3,9 +3,7 @@ A OpenSource software written in python using tensorflow, dx_feed and another AP
 Taking advantage of the orderflows we will predict the market price
 
 ## Neural Network
-The structure of the network is the following, 5 layers with `X_train.shape[0]` neurons.
-`Sigmoid X Sigmoid X Sigmoid X Sigmoid X Identity`
-
+The Neural Network is a CNN 
 
 ### Loss Function
 The Loss function is computed using `MeanSquarredError` + `Lasso`
@@ -13,7 +11,6 @@ The Loss function is computed using `MeanSquarredError` + `Lasso`
 
 ### Gradient Descend
 The gradient is computed using `Adam
-
 
 
 ### Evaluation
