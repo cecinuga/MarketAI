@@ -1,6 +1,7 @@
 import { Col, Container, Row } from "react-bootstrap";
+import NavBar from "./NavBar";
 
-export default function Header(){
+export default function Header(){    
     return (
         <>
             <Container >
@@ -11,7 +12,7 @@ export default function Header(){
                 </Row>
                 <Row>
                     <Col col={12} className="text-center">
-
+                        <NavBar />
                     </Col>
                 </Row>
             </Container>
