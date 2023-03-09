@@ -1,2 +1,3 @@
 1)La loss la calcolo sulla base dell' output del precedente strato o sull'input?
+
 2)Le predizioni vengono fatte in ultima istanza con la relu o ci sono ulteriori calcoli da fare?
