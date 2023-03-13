@@ -1,144 +1,116 @@
 import numpy as np
 import tensorflow as tf
+import sys
+from preprocessing import normalize_dataset
+sys.path.insert(0, 'C:\\Users\\Utente\\Desktop\\Dev\\Progetti\\OrderAi\\lib\\')
 
-class MLPLinearRegressor(tf.Module):
-    def __init__(self, layers, k, epochs=100, lr=0.01, batch_size=50):
+class MarketAI(tf.Module):
+    def __init__(self, layers, epochs=100, lr=0.1, l1=0.1, l2=0.1):
+        super().__init__(name="MarketAI")
+        self.epochs = epochs+1
         self.layers = layers
-        self.k = k
-        self.epochs = epochs
-        self.batch_size = batch_size
-        self.batch_counter = 0
-        self.history_builded = False
-        self.learning_rate = tf.keras.optimizers.schedules.ExponentialDecay(lr, decay_steps=epochs, decay_rate=0.50, staircase=True)
-        self.optimizer = tf.keras.optimizers.Adam(self.learning_rate)
-        self.train_mse = tf.keras.metrics.MeanSquaredError()
-        self.train_mae = tf.keras.metrics.MeanAbsoluteError()
-        self.train_accuracy = tf.keras.metrics.MeanSquaredLogarithmicError()
-        self.test_mse = tf.keras.metrics.MeanSquaredError()
-        self.test_mae = tf.keras.metrics.MeanAbsoluteError()
-        self.test_accuracy = tf.keras.metrics.MeanSquaredLogarithmicError()
-        self.regularizer = tf.keras.layers.ActivityRegularization()
-        self.loss_history = [e for e in range(epochs*k+1)]
-        self.bias_history = [e for e in range(epochs*k+1)]
-        self.mae_train_error_history = [e for e in range(epochs*k+1)]
-        self.mse_train_error_history = [e for e in range(epochs*k+1)]
-        self.mae_test_error_history = [e for e in range(epochs*k+1)]
-        self.mse_test_error_history = [e for e in range(epochs*k+1)]
-        self.residual_tr = [e for e in range(epochs*k+1)]
-        self.residual_tt = [e for e in range(epochs*k+1)]
-        self.r2_accuracy_tr = [e for e in range(epochs*k+1)]
-        self.r2_accuracy_tt = [e for e in range(epochs*k+1)]
+        self.l1 = tf.convert_to_tensor(l1, dtype=tf.float32)
+        self.l2 = tf.convert_to_tensor(l2, dtype=tf.float32)
+        self.Adam = tf.optimizers.Adam(lr, clipnorm=0.1, weight_decay=True)
+        self.loss_history = [e for e in range(self.epochs)]
+        self.r2_history = [e for e in range(self.epochs)]
+        self.losses = [e for e in range(len(self.layers))]
+        self.losses_test = [e for e in range(len(self.layers))]
+        self._builded = False
 
-    def reset_history_metrics(self):
-        self.train_mse.reset_state()
-        self.train_mae.reset_state()
-        self.test_mse.reset_state()
-        self.test_mae.reset_state()
-    
-    def update_states(self, loss, i, y, y_test):
-        self.bias_history[i] = self.bias
-        self.loss_history[i] = loss.numpy()
-        self.mae_train_error_history[i] = self.train_mae.result().numpy()
-        self.mse_train_error_history[i] = self.train_mse.result().numpy()
-        self.mae_test_error_history[i] = self.test_mae.result().numpy()
-        self.mse_test_error_history[i] = self.test_mse.result().numpy()
-        self.r2_accuracy_tr[i] = self.r2(y, self.predicted_train)
-        self.r2_accuracy_tt[i] = self.r2(y_test, self.predicted_test)
-        self.residual_tr[i] = tf.reduce_mean(tf.subtract(y, self.predicted_train))
-        self.residual_tt[i] = tf.reduce_mean(tf.subtract(y_test, self.predicted_test))
+    def _history(self, e, loss, y, y_pred):
+        self.loss_history[e] = loss
+        self.r2_history[e] = self._r2(y, y_pred)
 
-    def calc_metrics(self, y, y_test, e, k, loss):
-        self.reset_history_metrics()
-        self.train_mae.update_state(y, self.predicted_train)
-        self.train_mse.update_state(y, self.predicted_train)
-        self.test_mae.update_state(y_test, self.predicted_test)
-        self.test_mse.update_state(y_test, self.predicted_test)
-        self.update_states(loss, e+(k*self.epochs), y, y_test)
+    def load(self, X_train, X_test):
+        self.X_train = tf.convert_to_tensor(X_train, dtype=tf.float32)
+        self.X_test = tf.convert_to_tensor(X_test, dtype=tf.float32)
+        self.X_train_norm = tf.convert_to_tensor(tf.cast(normalize_dataset(X_train), dtype=tf.float32))
+        self.X_test_norm = tf.convert_to_tensor(tf.cast(normalize_dataset(X_test), dtype=tf.float32))
 
-    def calc_history(self, e_, epochs, k):
-        if not self.history_builded:
-            self.train_history = [[i for i in range(self.predicted_train.shape[0])] for e in range(epochs*self.k+1)]
-            self.test_history = [[i for i in range(self.predicted_test.shape[0])] for e in range(epochs*self.k+1)]
-            self.history_builded = True
-        self.train_history[e_] = self.predicted_train
-        self.test_history[e_] = self.predicted_test
-        
+    @tf.function
+    def build(self):
+        for l in range(len(self.layers)):
+            self.layers[l].build()
 
-    def verify_batch(self, X, X_test):
-        if self.batch_counter >= X:
-            self.batch_counter = 0
-        
-    def r2(self, y, y_pred):
-        return tf.subtract(
-            tf.convert_to_tensor(1, dtype=tf.float64), 
+    def _r2(self, y, y_pred):
+        return tf.reduce_mean(tf.subtract(
+            tf.convert_to_tensor(1, dtype=tf.float32), 
             tf.divide(
                 tf.reduce_sum(tf.square(tf.subtract(y, y_pred))),
                 tf.reduce_sum(tf.square(tf.subtract(y, tf.reduce_mean(y_pred))))
             )
-        )
+        ))
+    
+    @tf.function
+    def _lasso(self, weights):
+        return tf.reduce_sum(tf.multiply(self.l1, tf.abs(weights)))
 
     @tf.function
-    def lasso(self):
-        return tf.reduce_sum(tf.norm(self.layers[-1].weights))
+    def _ridge(self, weights):
+        return tf.reduce_sum(1/2*tf.multiply(self.l2, tf.square(weights)))
 
     @tf.function
-    def ridge(self):
-        return tf.reduce_sum(tf.square(tf.norm(self.layers[-1].weights)))
+    def _loss(self, y, predicted, weights):
+        lasso_reg = tf.reduce_sum([self._lasso(weight) for weight in weights])
+        ridge_reg = tf.reduce_sum([self._ridge(weight) for weight in weights])
+        return tf.add(tf.add(tf.losses.MAE(y, predicted), lasso_reg), ridge_reg)    
 
-    @tf.function(reduce_retracing=True)
-    def loss(self, y, predicted):
-        return tf.add(tf.add(tf.losses.MSE(y, predicted), self.lasso()), 0)
+    def _forward_lstm_layer(self, i, X_loss, output):
+        outputs = []
+        losses = []
+        for x_loss, x in zip(X_loss, output):
+            loss, output = self._forward_lstm(i, x, x_loss)
+            losses.append(loss)
+            outputs.append(output)
+        loss = tf.reduce_sum(losses)
+        return loss, outputs
+
+    @tf.function
+    def _forward_lstm(self, i, x, x_loss):
+        output, h = self.layers[i](x)
+        loss = self._loss(x_loss, output, [self.layers[i].W_hx, self.layers[i].W_hh, self.layers[i].W_hy])
+        return loss, tf.convert_to_tensor(output, dtype=tf.float32)
+    
+    def _forward_dense_layer(self, i, X_loss, X_norm):
+        outputs = []
+        losses = []
+        for x, x_loss in zip(X_loss, X_norm):
+            loss, output = self._forward_dense(i, x, x_loss)
+            losses.append(loss)
+            outputs.append(output)
+        loss = tf.reduce_sum(losses)
+        return loss, tf.convert_to_tensor(outputs, dtype=tf.float32)
+
+    @tf.function
+    def _forward_dense(self, i, x, x_loss):
+        output = self.layers[i](x)
+        loss = self._loss(x_loss, output, [self.layers[i].W_n])
+        return loss, output
+
+    def predict(self):
+        self.predicted_test, self.final_loss_test = self._forward(self.X_test, self.X_test_norm)
         
-    """@tf.function(reduce_retracing=True)
-    def elastic_loss(self, y, predicted):
-        return 1/2(tf.matmul(tf.transpose(tf.subtract(predicted, y)), tf.subtract(predicted, y)))+1/2"""
-    
-    @tf.function
-    def _predict(self, X, bias, compressed_weights, error):
-        return tf.reduce_mean(tf.add(tf.add(tf.multiply(X, compressed_weights), bias), error), axis=1, name="Predict")
-    
-    def predict(self, x):
-        return tf.reduce_mean(tf.add(tf.multiply(x, self.compressed_weights), self.bias))
+    def _forward(self, X, X_norm):
+        losses = [e for e in range(len(self.layers))]
+        losses[0], output = self._forward_dense_layer(0, X, X_norm)
+        losses[1], output = self._forward_lstm_layer(1, X, output)
+        losses[2], output = self._forward_dense_layer(2, X, output)
+        losses[3], output = self._forward_dense_layer(3, X, output)
+        predicted = tf.reduce_mean(tf.reshape(output, [output.shape[1], output.shape[0], output.shape[2]]), axis=0)
+        final_loss = tf.reduce_sum(losses)
+        return predicted, final_loss
 
-    @tf.function(reduce_retracing=True)
-    def _forward(self, X):
-        for layer in self.layers:
-            X = layer(X)
-        return X
+    def _backprop(self, tape: tf.GradientTape):
+        grads = tape.gradient(self.final_loss, self.variables) 
+        self.Adam.apply_gradients(zip(grads, self.variables))
 
-    @tf.function(reduce_retracing=True)
-    def _backprop(self, X, XN, X_test, y, y_test):
-        error_tr = 0
-        error_tt = 0
-        batch_xn = XN[self.batch_counter:self.batch_counter+self.batch_size, :]
-        weights = self._forward(batch_xn)
-        bias = self.layers[-1].bias
-
-        compressed_weights = tf.reduce_sum(tf.nn.relu(tf.add(tf.multiply(tf.transpose(batch_xn), tf.reduce_mean(weights, axis=1)), bias)), axis=1)
-        predicted_train = self._predict(X, bias, compressed_weights, error_tr)
-        predicted_test = self._predict(X_test, bias, compressed_weights, error_tt)
-        error_tr = tf.reduce_mean(tf.subtract(y, predicted_train))
-        error_tt = tf.reduce_mean(tf.subtract(y_test, predicted_test))
-        loss = tf.nn.scale_regularization_loss(self.loss(y, predicted_train))
-
-        #intercept_tr = tf.add(tf.multiply(X, compressed_weights), bias)[:, 0]
-        #intercept_tt = tf.add(tf.multiply(X_test, compressed_weights), bias)[:, 0]
-
-        self.vars = [self.layers[0].weights, self.layers[1].weights, self.layers[2].weights,self.layers[3].weights,self.layers[4].weights, self.layers[0].bias, self.layers[1].bias, self.layers[2].bias,self.layers[3].bias, self.layers[4].bias]
-        self.batch_counter = self.batch_counter + self.batch_size
-        return loss, bias, compressed_weights, predicted_train, predicted_test, error_tt #intercept_tr, intercept_tt
-
-    def run(self, X, X_test, XN, XN_test, y, y_test, k):
-        for e in range(self.epochs+1):
-            self.verify_batch(X.shape[0], X_test.shape[0])
-            
+    def train(self):
+        for e in range(self.epochs):
             with tf.GradientTape(watch_accessed_variables=True, persistent=True) as tape:
-                loss, self.bias, self.compressed_weights, self.predicted_train, self.predicted_test, self.error_tt = self._backprop(X, XN, X_test, y, y_test)
-            
-            grads = tape.gradient(loss, self.vars)  
-            self.optimizer.apply_gradients(zip(grads, self.vars))   
-            self.calc_metrics(y, y_test, e, k, loss)
-            self.calc_history(e, self.epochs, k)
-            #if e%50==0:
-                #print("[{0}] Train Score: {1}, Test Score: {2} Loss: {3} Error: {4} Bias: {5} Weights: {6} ".format(e, np.round(self.r2_accuracy_tr[e], 3), np.round(self.r2_accuracy_tt[e], 3), np.round(loss.numpy(), 3), np.round(self.error_tt.numpy(), 3), np.round(self.bias.numpy(), 3), np.round(self.compressed_weights.numpy(), 3)))
-            
+                self.predicted_train, self.final_loss = self._forward(self.X_train, self.X_train_norm)
+            self._backprop(tape)
+
+            self._history(e, self.final_loss, self.X_train, self.predicted_train)
+            if e%100==0 or e == 0 or e == self.epochs-1:
+                print("[{2}] TotalLoss: {0} R2: {1}".format(self.final_loss, self.r2_history[e], e))
