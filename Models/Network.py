@@ -1,7 +1,8 @@
 import numpy as np
 import tensorflow as tf
 import sys
-from preprocessing import normalize_dataset
+from sklearn import preprocessing
+
 sys.path.insert(0, 'C:\\Users\\Utente\\Desktop\\Dev\\Progetti\\OrderAi\\lib\\')
 
 class MarketAI(tf.Module):
@@ -25,8 +26,8 @@ class MarketAI(tf.Module):
     def load(self, X_train, X_test):
         self.X_train = tf.convert_to_tensor(X_train, dtype=tf.float32)
         self.X_test = tf.convert_to_tensor(X_test, dtype=tf.float32)
-        self.X_train_norm = tf.convert_to_tensor(tf.cast(normalize_dataset(X_train), dtype=tf.float32))
-        self.X_test_norm = tf.convert_to_tensor(tf.cast(normalize_dataset(X_test), dtype=tf.float32))
+        self.X_train_norm = tf.convert_to_tensor(tf.cast(preprocessing.normalize(X_train, axis=1), dtype=tf.float32))
+        self.X_test_norm = tf.convert_to_tensor(tf.cast(preprocessing.normalize(X_test, axis=1), dtype=tf.float32))
 
     @tf.function
     def build(self):

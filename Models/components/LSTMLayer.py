@@ -1,7 +1,7 @@
 import tensorflow as tf
+from sklearn import preprocessing
 import sys
 sys.path.insert(0, 'C:\\Users\\Utente\\Desktop\\Dev\\Progetti\\OrderAi\\lib\\')
-from preprocessing import normalize_dataset
 
 class LSTMLayer(tf.Module):
     def __init__(self, units, input_dim, output_dim):
@@ -13,9 +13,9 @@ class LSTMLayer(tf.Module):
     @tf.function
     def build(self):
         if not self.builded:
-            self.W_hx = tf.Variable(tf.cast(tf.random.normal(shape=(self.units, self.input_dim)), dtype=tf.float32), trainable=True, dtype=tf.float32)
-            self.W_hh = tf.Variable(tf.cast(tf.random.normal(shape=(self.units, self.units)), dtype=tf.float32), trainable=True, dtype=tf.float32)
-            self.W_hy = tf.Variable(tf.cast(tf.random.normal(shape=(self.input_dim, self.units)), dtype=tf.float32), trainable=True, dtype=tf.float32)
+            self.W_hx = tf.Variable(tf.cast(preprocessing.normalize(tf.random.normal(shape=(self.units, self.input_dim)),axis=1), dtype=tf.float32), trainable=True, dtype=tf.float32)
+            self.W_hh = tf.Variable(tf.cast(preprocessing.normalize(tf.random.normal(shape=(self.units, self.units)),axis=1), dtype=tf.float32), trainable=True, dtype=tf.float32)
+            self.W_hy = tf.Variable(tf.cast(preprocessing.normalize(tf.random.normal(shape=(self.input_dim, self.units)),axis=1), dtype=tf.float32), trainable=True, dtype=tf.float32)
             self.h = tf.Variable(tf.cast(tf.zeros([self.units, 1]), dtype=tf.float32), dtype=tf.float32)
             self.vars = [self.W_hx, self.W_hh, self.W_hy]
             self.builded = True
